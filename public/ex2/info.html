@@ -1,32 +1,98 @@
 <!DOCTYPE html>
 <html>
-    <head>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body onload="getCategories()">
+  <div class="container-fluid">
+    <h1 class="text-center">Supermarket</h1>
+    <div class="row">
+      <div class="col-md-3">
+        <span class="lead text-center">Category</span>
+      </div>
+      <div class="col-md-9">
+        <select class="form-select" onchange="getItems()" id="selectCategory">
+          <option value="0">To select</option>
+          <option value="all">All</option>
+        </select>
+      </div>
+    </div>
+    <div id="itemsList" class="row my-3 py-3">
+      <p class="text-center">No items</p>
+    </div>
+  </div>
 
-        <!-- Bootstrap -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        
-         <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    </head>
-    <body>
-        <div class="bg-light text-center p-5 mb-4">
-            <h2>Choose an option:</h2>
-            <label for="limit">Limit:</label>
-            <input id="limit" type="number" min=1 max=5 value=1>
-            <select onchange="getData()" id="type">
-                <option value="customers">Customers</option>
-                <option value="products">Products</option>
-                <option value="suppliers">Suppliers</option>
-            </select>
-            
-        </div>
-        <div id="result">
+  <script>
+    async function getCategories() {
+      try {
+        const res = await axios.get('/categories');
+        showCategories(res.data);
+      } catch (e) {
+        console.log(e.message);
+      }
+    }
 
-        </div>
-        <script>
-            function getData() {
- 
-            }
+    function showCategories(categories) {
+      const sel = document.getElementById('selectCategory');
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        sel.appendChild(opt);
+      });
+    }
 
-        </script>
+    async function getItems() {
+      const selVal = document.getElementById('selectCategory').value;
+      if (selVal === '0') {
+        showItems([]);
+        return;
+      }
+      const params = selVal === 'all' ? {} : { category: selVal };
+      try {
+        const res = await axios.get('/items', { params: params });
+        showItems(res.data);
+      } catch (e) {
+        console.log(e.message);
+        showItems([]);
+      }
+    }
+
+    function showItems(items) {
+      const list = document.getElementById('itemsList');
+      while (list.firstChild) list.removeChild(list.firstChild);
+      if (!Array.isArray(items) || items.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'text-center';
+        p.textContent = 'No items';
+        list.appendChild(p);
+        return;
+      }
+      items.forEach(item => {
+        const col = document.createElement('div');
+        col.className = 'col-12 col-md-6 col-lg-4 mb-3 d-flex';
+        const card = document.createElement('div');
+        card.className = 'card flex-fill text-center';
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        const h5 = document.createElement('h5');
+        h5.className = 'card-title';
+        h5.textContent = item.name;
+        const p = document.createElement('p');
+        p.className = 'card-text';
+        const price = Number(item.price);
+        p.textContent = 'Price: $' + (isNaN(price) ? String(item.price) : price.toFixed(2));
+        body.appendChild(h5);
+        body.appendChild(p);
+        card.appendChild(body);
+        col.appendChild(card);
+        list.appendChild(col);
+      });
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
 </body>
 </html>
